@@ -3,6 +3,8 @@ using WebApiNetCoreRedis.Core.Entities;
 using WebApiNetCoreRedis.Infra.Persistence;
 using WebApiNetCoreRedis.Models;
 using Microsoft.EntityFrameworkCore;
+using WebApiNetCoreRedis.Infra.Caching;
+using Newtonsoft.Json;
 
 
 namespace WebApiNetCoreRedis.Controllers
@@ -12,9 +14,11 @@ namespace WebApiNetCoreRedis.Controllers
     public class ToDosController : ControllerBase
     {
         private readonly ToDoListDbContext _context;
-        public ToDosController(ToDoListDbContext context)
+        private readonly ICachingService _cache;
+        public ToDosController(ICachingService cache, ToDoListDbContext context)
         {
             _context = context;
+            _cache = cache;
         }
 
 
@@ -33,12 +37,24 @@ namespace WebApiNetCoreRedis.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            ToDo? todo = await _context.ToDos.SingleOrDefaultAsync(t => t.Id == id);
+            var todoCache = await _cache.GetAsync(id.ToString());
+            ToDo? todo;
+
+            if (!string.IsNullOrWhiteSpace(todoCache))
+            {
+                todo = JsonConvert.DeserializeObject<ToDo>(todoCache);
+
+                Console.WriteLine("Loadded from cache.");
+
+                return Ok(todo);
+            }
+
+            todo = await _context.ToDos.SingleOrDefaultAsync(t => t.Id == id);
 
             if (todo == null)
-            {
                 return NotFound();
-            }
+
+            await _cache.SetAsync(id.ToString(), JsonConvert.SerializeObject(todo));
 
             return Ok(todo);
         }

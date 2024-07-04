@@ -7,7 +7,12 @@ var builder = WebApplication.CreateBuilder(args);
 //InMemory Database aqui
 builder.Services.AddDbContext<ToDoListDbContext>(o => o.UseInMemoryDatabase("ToDoListDb"));
 
-
+//Aponto para minha imagem Docker
+builder.Services.AddStackExchangeRedisCache(o =>
+{
+    o.InstanceName = "instace";
+    o.Configuration = "localhost:6379";
+});
 // Add services to the container.
 
 builder.Services.AddControllers();
