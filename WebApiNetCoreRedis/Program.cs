@@ -1,4 +1,12 @@
+using Microsoft.EntityFrameworkCore;
+using WebApiNetCoreRedis.Infra.Persistence;
+using WebApiNetCoreRedis.Infra.Caching;
+
 var builder = WebApplication.CreateBuilder(args);
+
+//InMemory Database aqui
+builder.Services.AddDbContext<ToDoListDbContext>(o => o.UseInMemoryDatabase("ToDoListDb"));
+
 
 // Add services to the container.
 
